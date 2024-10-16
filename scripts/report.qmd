@@ -1,5 +1,5 @@
 ---
-title: "Werthern, Sublocade Lidocaine 2024"
+title: "Wethern, Sublocade + Lidocaine 2024"
 
 # format: 
 #   docx:
@@ -19,6 +19,7 @@ execute:
 from great_tables import GT, md, html
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+from statsmodels.stats.weightstats import ttest_ind
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -82,15 +83,12 @@ tab2 = new_row._append(tab2, ignore_index = True)
 GT(tab2)
 ```
 
-# Complete cases
+<!-- # Complete cases -->
 ```{python}
 comp_cases = data.copy()
 comp_cases.dropna(subset=['Question 1', 'Question 2'], inplace = True)
 ```
 
-```{python}
-GT(pd.DataFrame({'Descriptive': ['Complete Cases'], 'Value': [str(comp_cases.shape[0])]}))
-```
 
 # Linear mixed effect model
 ```{python}
@@ -129,10 +127,7 @@ mdf.summary()
 # https://stats.stackexchange.com/questions/244000/understand-summary-from-statsmodels-mixedlm-function
 ```
 
-There is a significant difference in pain scores between Question 1 and Question 2 (z = -15.6, P < 0.0001). Pain scores from Question 2 were estimated to be 4.694 units lower than pain scores in Question 1 (95% CI: -5.284 to -4.104). * z values represent parameter estimates 
-divided by standard error
-
-
+There is a significant difference in pain scores between Question 1 and Question 2 (z = -15.6, P < 0.0001). Pain scores from Question 2 were estimated to be 4.694 units lower than pain scores in Question 1 (95% CI: -5.284 to -4.104). * z values represent parameter estimates divided by the standard error.
 ```{python}
 #| eval: false
 # Display the mean predicted values with no random effects
@@ -160,4 +155,61 @@ plt.show() # Prevents extra text from displaying
 ```{python}
 # Export data to csv to verify results with R
 # df.to_csv("../data/long_data_clean.csv", index = False)
+```
+
+# Complete cases
+```{python}
+GT(pd.DataFrame({'Descriptive': ['Complete Cases'], 'N': [str(comp_cases.shape[0])]}))
+```
+
+# Paired samples t-test
+```{python}
+comp_cases['d'] = comp_cases['Question 1'] - comp_cases['Question 2']
+
+import scipy.stats as stats
+result = stats.ttest_rel(comp_cases['Question 1'], comp_cases['Question 2'])
+```
+
+```{python}
+x1 = comp_cases['Question 1']
+x2 = comp_cases['Question 2']
+# Return a data frame assembled from results
+ttab = pd.DataFrame.from_dict(
+  {
+  "N Q1":         [x1.size],
+  "Mean Q1":     [x1.mean().round(2)],
+  "Std Q1":      [x1.std().round(2)],
+  "N Q2":         [x2.size], 
+  "Mean Q2":    [x2.mean().round(2)],
+  "Std Q2":     [x2.std().round(2)],
+  "Tstat":        [result.statistic.round(2)],
+  "Pval":         [result.pvalue .round(2)],
+  "df":           [result.df],
+  }
+).reset_index(drop=True)
+
+GT(ttab)
+```
+
+
+```{python}
+# Calculate the mean difference and standard error
+mean_diff = np.mean(x1 - x2)
+se_diff = stats.sem(x1 - x2)
+
+# Calculate the degrees of freedom
+df = len(x1) - 1
+
+# Calculate the confidence interval
+ci = stats.t.interval(confidence=0.95, df=df, loc=mean_diff, scale=se_diff)
+
+dtab = pd.DataFrame.from_dict(
+  {
+    "Mean Difference": [mean_diff.round(2)],
+    "[0.025": [ci[0].round(2)],
+    "0.975]": [ci[1].round(2)]
+  }
+)
+
+GT(dtab)
 ```

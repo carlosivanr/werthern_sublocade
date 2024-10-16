@@ -1,0 +1,132 @@
+---
+title: "Werthern, Sublocade Lidocaine 2024"
+
+# format: 
+#   docx:
+#     reference-doc: "./custom-reference-doc.docx"
+#     fig-dpi: 600
+
+format:
+  html:
+    embed-resources: true
+    toc: true
+
+execute: 
+  echo: false
+---
+
+```{python}
+from great_tables import GT, md, html
+# from statsmodels.stats.weightstats import ttest_ind
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+```
+
+```{python}
+# Import .csv file
+# os.getcwd()
+data = pd.read_csv("../data/sublocade_lidocaine.csv")
+data = data.reset_index()
+```
+
+
+```{python}
+# Number of paired responses is 68
+# data = data[data['Question 1'].notna()]
+# data = data[data['Question 2'].notna()]
+```
+
+
+# Question 1: 
+On a scale from 0 to 10, what do you rate your pain when given Sublocade without the use of lidocaine? * 0 means no pain and 10 means the worst pain you have ever felt.`
+
+```{python}
+tab1 = (data['Question 1']
+  .describe()
+  .reset_index()
+  .rename(columns = {"index": "Descriptive"})
+  .round(2)
+)
+
+GT(tab1)
+```
+
+# Question 2: 
+On a scale from 0 to 10, what do you rate your pain when given Sublocade with the use of lidocaine via J-TIP device? * 0 means no pain and 10 means the worst pain you have ever felt.
+
+```{python}
+tab2 = (data['Question 2']
+  .describe()
+  .reset_index()
+  .rename(columns = {"index": "Descriptive"})
+  .round(2)
+)
+
+GT(tab2)
+```
+
+# Linear mixed effect model
+```{python}
+# Create a column called Id from the index
+data['id'] = data["index"]
+
+# Select only the columns of interest
+data = data[["id", "Question 1", "Question 2"]]
+
+# Createa a long version of the data
+long_data = (pd.wide_to_long(data, stubnames = "Question ", i = "id", j = "question").reset_index())
+
+# Create a new column called pain from Question
+long_data["pain"] = long_data["Question "]
+
+# Create a new data frame from long data with only the variables of interest
+df = long_data[['id', 'question', 'pain']]
+
+# Dropping missing values before modeling
+df = df[df.pain.notnull()]
+
+# Recode values to make summary output 
+# more interpretable
+df = df.replace({'question': {1: 0, 2:1}})
+```
+
+```{python}
+# Set a model formula
+md = smf.mixedlm("pain ~ question", df, groups = df['id'])
+
+# Fit the model
+mdf = md.fit()
+
+# Display the summary print() for R-style output
+mdf.summary()
+```
+
+```{python}
+#| eval: false
+# Display the mean predicted values with no random effects
+# The difference of the means should be equivalent to the coefficient
+# in the model output
+(pd.DataFrame({"question": df["question"], 
+               "fitted": mdf.predict()})
+   .groupby("question")
+   .agg({"fitted": "mean"})
+)
+```
+
+# Line plot
+```{python}
+p = sns.pointplot(data = df, x = 'question', y = 'pain', errorbar = 'se')
+p.set_xticklabels([1,2])
+plt.ylabel("Mean Pain Score (+/- se)")
+plt.xlabel("Question")
+```
+
+
+```{python}
+# Export data to csv to verify results with R
+# df.to_csv("../data/long_data_clean.csv", index = False)
+```

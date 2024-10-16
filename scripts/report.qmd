@@ -36,7 +36,7 @@ data = (
 
 
 
-# Question 1: 
+# Question 1
 On a scale from 0 to 10, what do you rate your pain when given Sublocade without the use of lidocaine? * 0 means no pain and 10 means the worst pain you have ever felt.`
 ```{python}
 # Create a table of descriptive statistics for Question 1
@@ -59,7 +59,7 @@ tab1 = new_row._append(tab1, ignore_index = True)
 GT(tab1)
 ```
 
-# Question 2: 
+# Question 2
 On a scale from 0 to 10, what do you rate your pain when given Sublocade with the use of lidocaine via J-TIP device? * 0 means no pain and 10 means the worst pain you have ever felt.
 ```{python}
 # Create a table of descriptive statistics for Question 2
@@ -146,9 +146,10 @@ divided by standard error
 ```
 
 # Figure
+Mean Pain Score (+/- se)
 ```{python}
-fig = sns.pointplot(data = df, x = 'question', y = 'pain', errorbar = 'se')
-fig.set(xlabel = 'Question', ylabel = 'Mean Pain Score (+/- se)')
+fig = sns.pointplot(data = df, x = 'question', y = 'pain', errorbar = 'se', capsize = .05)
+fig.set(xlabel = 'Question', ylabel = 'Pain Score')
 fig.set_xticks([0, 1]) # Sets the x ticks manually for label modification
 fig.set_xticklabels([1, 2]) # Modify the x tick labels
 fig.set(ylim=(0,10))

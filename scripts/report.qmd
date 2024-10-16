@@ -33,18 +33,16 @@ data = pd.read_csv("../data/sublocade_lidocaine.csv")
 data = data.reset_index()
 ```
 
-
 ```{python}
 # Number of paired responses is 68
 # data = data[data['Question 1'].notna()]
 # data = data[data['Question 2'].notna()]
 ```
 
-
 # Question 1: 
 On a scale from 0 to 10, what do you rate your pain when given Sublocade without the use of lidocaine? * 0 means no pain and 10 means the worst pain you have ever felt.`
-
 ```{python}
+# Create a table of descriptive statistics for Question 1
 tab1 = (data['Question 1']
   .describe()
   .reset_index()
@@ -57,8 +55,8 @@ GT(tab1)
 
 # Question 2: 
 On a scale from 0 to 10, what do you rate your pain when given Sublocade with the use of lidocaine via J-TIP device? * 0 means no pain and 10 means the worst pain you have ever felt.
-
 ```{python}
+# Create a table of descriptive statistics for Question 1
 tab2 = (data['Question 2']
   .describe()
   .reset_index()
@@ -120,11 +118,10 @@ mdf.summary()
 # Line plot
 ```{python}
 p = sns.pointplot(data = df, x = 'question', y = 'pain', errorbar = 'se')
-p.set_xticklabels([1,2])
+p.set_xticklabels([1, 2])
 plt.ylabel("Mean Pain Score (+/- se)")
 plt.xlabel("Question")
 ```
-
 
 ```{python}
 # Export data to csv to verify results with R

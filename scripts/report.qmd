@@ -19,7 +19,7 @@ execute:
 from great_tables import GT, md, html
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from statsmodels.stats.weightstats import ttest_ind
+import scipy.stats as stats
 import pandas as pd
 import numpy as np
 import seaborn as sns
@@ -34,8 +34,6 @@ data = (
   .reset_index()
   )
 ```
-
-
 
 # Question 1
 On a scale from 0 to 10, what do you rate your pain when given Sublocade without the use of lidocaine? * 0 means no pain and 10 means the worst pain you have ever felt.`
@@ -82,13 +80,6 @@ tab2 = new_row._append(tab2, ignore_index = True)
 
 GT(tab2)
 ```
-
-<!-- # Complete cases -->
-```{python}
-comp_cases = data.copy()
-comp_cases.dropna(subset=['Question 1', 'Question 2'], inplace = True)
-```
-
 
 # Linear mixed effect model
 ```{python}
@@ -152,36 +143,35 @@ sns.despine(bottom = False, left = False, top = True, right = True)
 plt.show() # Prevents extra text from displaying
 ```
 
+# Complete cases
 ```{python}
-# Export data to csv to verify results with R
-# df.to_csv("../data/long_data_clean.csv", index = False)
+comp_cases = data.copy()
+comp_cases.dropna(subset=['Question 1', 'Question 2'], inplace = True)
 ```
 
-# Complete cases
 ```{python}
 GT(pd.DataFrame({'Descriptive': ['Complete Cases'], 'N': [str(comp_cases.shape[0])]}))
 ```
 
 # Paired samples t-test
 ```{python}
-comp_cases['d'] = comp_cases['Question 1'] - comp_cases['Question 2']
-
-import scipy.stats as stats
 result = stats.ttest_rel(comp_cases['Question 1'], comp_cases['Question 2'])
 ```
 
 ```{python}
+# Set each outcome column as a separate pd.series
 x1 = comp_cases['Question 1']
 x2 = comp_cases['Question 2']
+
 # Return a data frame assembled from results
 ttab = pd.DataFrame.from_dict(
   {
   "N Q1":         [x1.size],
-  "Mean Q1":     [x1.mean().round(2)],
-  "Std Q1":      [x1.std().round(2)],
+  "Mean Q1":      [x1.mean().round(2)],
+  "Std Q1":       [x1.std().round(2)],
   "N Q2":         [x2.size], 
-  "Mean Q2":    [x2.mean().round(2)],
-  "Std Q2":     [x2.std().round(2)],
+  "Mean Q2":      [x2.mean().round(2)],
+  "Std Q2":       [x2.std().round(2)],
   "Tstat":        [result.statistic.round(2)],
   "Pval":         [result.pvalue .round(2)],
   "df":           [result.df],
@@ -191,18 +181,18 @@ ttab = pd.DataFrame.from_dict(
 GT(ttab)
 ```
 
-
 ```{python}
 # Calculate the mean difference and standard error
 mean_diff = np.mean(x1 - x2)
 se_diff = stats.sem(x1 - x2)
 
 # Calculate the degrees of freedom
-df = len(x1) - 1
+df = result.df
 
 # Calculate the confidence interval
 ci = stats.t.interval(confidence=0.95, df=df, loc=mean_diff, scale=se_diff)
 
+# Create a table of the mean difference and 95% CI
 dtab = pd.DataFrame.from_dict(
   {
     "Mean Difference": [mean_diff.round(2)],
@@ -212,4 +202,9 @@ dtab = pd.DataFrame.from_dict(
 )
 
 GT(dtab)
+```
+
+```{python}
+# Export data to csv to verify results with R
+# df.to_csv("../data/long_data_clean.csv", index = False)
 ```
